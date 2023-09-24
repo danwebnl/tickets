@@ -1,8 +1,14 @@
 import Link from "next/link"
 import Image from "next/image"
 import Logo from "./ticket-logo.png"
+import LogoutButton from "./LogOutButton"
 
-export default function Navbar() {
+type User = {
+  email?: string
+}
+
+export default function Navbar({ user }: { user: User | undefined }) {
+  console.log("user", user)
   return (
     <nav>
       <Image
@@ -15,7 +21,11 @@ export default function Navbar() {
       />
       <h1>Tickets Helpdesk</h1>
       <Link href="/">Dashboard</Link>
-      <Link href="/tickets">Tickets</Link>
+      <Link href="/tickets" className="mr-auto">
+        Tickets
+      </Link>
+      {user && <span>Hello, {user.email}</span>}
+      <LogoutButton />
     </nav>
   )
 }
