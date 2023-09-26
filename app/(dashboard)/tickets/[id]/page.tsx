@@ -1,67 +1,64 @@
 import { notFound } from "next/navigation"
-import { Ticket } from "@/app/types"
+import { cookies } from "next/headers"
+import { createServerComponentClient } from "@supabase/auth-helpers-nextjs"
+
+import DeleteIcon from "./DeleteButton"
 
 type Params = {
   id: string
 }
 
-export const dynamicParams = true // default val = true
+export const dynamicParams = true
 
 export async function generateMetadata({ params }: { params: Params }) {
-  const id = params.id
+  const supabase = createServerComponentClient({ cookies })
 
-  const res = await fetch(`http://localhost:4000/tickets/${id}`)
-  const ticket: Ticket = await res.json()
+  const { data: ticket } = await supabase
+    .from("tickets")
+    .select()
+    .eq("id", params.id)
+    .single()
 
   return {
-    title: `Tickets | ${ticket.title}`,
+    title: `Tickets | ${ticket?.title || "Ticket not Found"}`,
   }
 }
 
-export async function generateStaticParams() {
-  const result: Ticket[] = await fetch("http://localhost:4000/tickets").then(
-    (result) => result.json()
-  )
-
-  const list = result.map((item) => ({
-    id: item.id,
-  }))
-
-  return list
-}
-
 async function getTicket(id: string) {
-  const result = await fetch(`http://localhost:4000/tickets/${id}`, {
-    next: {
-      revalidate: 60,
-    },
-  })
-    .then((res) => {
-      if (!res.ok) {
-        notFound()
-      }
-      return res.json()
-    })
-    .catch((error) => {
-      console.log("error", error)
-      notFound()
-    })
+  const supabase = createServerComponentClient({ cookies })
 
-  return result
+  const { data } = await supabase.from("tickets").select().eq("id", id).single()
+
+  if (!data) {
+    notFound()
+  }
+
+  return data
 }
 
-export default async function TicketItem({ params }: { params: Params }) {
-  const { title, user_email, priority, body } = await getTicket(params.id)
+export default async function TicketDetails({ params }: { params: Params }) {
+  const ticket = await getTicket(params.id)
+
+  const supabase = createServerComponentClient({ cookies })
+  const { data } = await supabase.auth.getSession()
+
   return (
     <main>
       <nav>
         <h2>Ticket Details</h2>
+        <div className="ml-auto">
+          {data?.session && data.session.user.email === ticket.user_email && (
+            <DeleteIcon id={ticket.id} />
+          )}
+        </div>
       </nav>
       <div className="card">
-        <h3>{title}</h3>
-        <small>Created by {user_email}</small>
-        <p>{body}</p>
-        <div className={`pill ${priority}`}>{priority} priority</div>
+        <h3>{ticket.title}</h3>
+        <small>Created by {ticket.user_email}</small>
+        <p>{ticket.body}</p>
+        <div className={`pill ${ticket.priority}`}>
+          {ticket.priority} priority
+        </div>
       </div>
     </main>
   )

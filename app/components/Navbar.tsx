@@ -8,7 +8,6 @@ type User = {
 }
 
 export default function Navbar({ user }: { user: User | undefined }) {
-  console.log("user", user)
   return (
     <nav>
       <Image
@@ -21,8 +20,9 @@ export default function Navbar({ user }: { user: User | undefined }) {
       />
       <h1>Tickets Helpdesk</h1>
       <Link href="/">Dashboard</Link>
-      <Link href="/tickets" className="mr-auto">
-        Tickets
+      <Link href="/tickets">Tickets</Link>
+      <Link href="/tickets/create" className="mr-auto">
+        New Ticket
       </Link>
       {user && <span>Hello, {user.email}</span>}
       <LogoutButton />
